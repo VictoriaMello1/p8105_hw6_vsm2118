@@ -225,8 +225,11 @@ final_fit %>%
   knitr::kable(digits = 3)
 
 ```
-********ADD DESCRIPTION OF MODEL BUILDING PROCESS AND FINAL MODEL**********
-The final model...
+
+The birthweight prediction model was developed through a stepwise variable selection process, aiming to identify a parsimonious set of predictors that significantly contribute to explaining the variance in baby birthweight. The final model fit equation is: lm(bwt ~ babysex + bhead + blength + delwt + fincome + 
+    gaweeks + mheight + mrace + parity + ppwt + smoken, data = birthweight_df). The stepwise procedure involves iteratively adding or removing variables based on statistical criteria, ultimately leading to a model with a balanced trade-off between explanatory power and simplicity. The selection of these variables is based on their statistical significance in predicting birthweight within the given dataset. It is important to note that while other variables were considered during the stepwise procedure, the final model includes only those deemed to have a substantial impact on birthweight and aims to strike a balance between model complexity and predictive accuracy.
+
+
 
 Plot of Model Residuals
 ```{r}
@@ -295,6 +298,6 @@ comparison_results <-
 print(comparison_results)
 ```
 
-In summary, the initial model, which uses the predictors selected through the stepwise model building process, appears to provide the best average cross-validated prediction performance among the three models. Model 2, with additional predictors and interactions, performs better than Model 1 but not as well as the initial model. This comparison underscores the importance of considering the trade-off between model complexity and predictive accuracy.
+In summary, the initial model, which uses the predictors selected through the stepwise model building process, appears to provide the best average cross-validated prediction performance among the three models. Model 2, with additional predictors and interactions, performs better than Model 1 but just barely less well than the initial model. This comparison underscores the importance of considering the trade-off between model complexity and predictive accuracy.
 
 
