@@ -171,6 +171,7 @@ ggplot(aes(x = log_beta)) +
 
 logbeta_estimate_plot
 ```
+
 The R squared plot appears to follow a normal distribution with slight leftward skew that is likely a product of random sampling variability. However, the log beta plot is highly skewed to the left which may be the result of there being negative beta estimates that were not able to be used for calculating the log estimates. This strong leftward skew suggests that these log beta estimates may not be representative of the underlying data set. 
 
 
@@ -192,7 +193,108 @@ print(paste("95% CI for log(beta1 * beta2): [", round(ci_log_beta[1], 4), ",", r
 
 ### Problem 3
 
+Tidying the Data 
 ```{r}
+# Load and clean the birthweight dataset
+birthweight_df = 
+read_csv("data/birthweight.csv") %>% 
+  janitor::clean_names() %>% 
+  mutate(across(c(babysex, frace, malform, mrace), as_factor))  
+
+# Check for missing data
+missing_data <- birthweight_df %>%
+  summarize_all(~ sum(is.na(.)))
 
 ```
+
+
+Fitting a regression model
+```{r}
+# Fit a regression model for birthweight
+fit_birthweight <- lm(bwt ~ ., data = birthweight_df)
+
+step(fit_birthweight, direction = "both")
+
+final_fit = lm(bwt ~ babysex + bhead + blength + delwt + fincome + 
+    gaweeks + mheight + mrace + parity + ppwt + smoken, data = birthweight_df)
+
+# Tidy up the output
+final_fit %>%
+  broom::tidy() %>%
+  mutate(term = str_replace_all(term, ":", " * ")) %>%
+  knitr::kable(digits = 3)
+
+```
+********ADD DESCRIPTION OF MODEL BUILDING PROCESS AND FINAL MODEL**********
+The final model...
+
+Plot of Model Residuals
+```{r}
+# Add predictions and residuals to the dataset
+birthweight_res <- birthweight_df %>%
+  modelr::add_predictions(fit_birthweight, var = ".fitted") %>%
+  modelr::add_residuals(fit_birthweight, var = ".resid")
+
+# Plot residuals against fitted values
+ggplot(birthweight_res, aes(x = .fitted, y = .resid)) +
+  geom_point(alpha = 0.25, color = "blue") +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "red") +
+  labs(x = "Fitted Values", y = "Residuals") +
+  theme_minimal()
+
+```
+
+
+Cross Validation: 
+```{r}
+# Model 1: Using length at birth and gestational age as predictors
+fit_model_1 <- lm(bwt ~ blength + gaweeks, data = birthweight_df)
+
+# Model 2: Using head circumference, length, sex, and interactions
+fit_model_2 <- lm(bwt ~ bhead * blength * babysex, data = birthweight_df)
+
+```
+
+
+```{r}
+birthweight_cv <- birthweight_df %>%
+  select(bwt, blength, gaweeks, bhead, blength, babysex)
+
+# Cross-validation for all three models
+cv_results <- 
+  birthweight_cv %>% 
+  crossv_mc(100) %>%
+  mutate(
+    train = map(train, as_tibble),
+    test = map(test, as_tibble)
+  ) %>%
+  mutate(
+    model_1_fit = map(train, \(df) lm(bwt ~ blength + gaweeks, data = df)),
+    model_2_fit = map(train, \(df) lm(bwt ~ (bhead + blength + babysex)^3, data = df)),
+    model_initial_fit = map(train, \(df) lm(bwt ~ ., data = df)),
+    rmse_model_1 = map2_dbl(model_1_fit, test, \(mod, df) rmse(mod, df)),
+    rmse_model_2 = map2_dbl(model_2_fit, test, \(mod, df) rmse(mod, df)),
+    rmse_initial_model = map2_dbl(model_initial_fit, test, \(mod, df) rmse(mod, df))
+  )
+
+
+# Compare the models
+comparison_results <- 
+  bind_rows(
+    select(cv_results, rmse_model_1, rmse_model_2, rmse_initial_model)
+  ) %>%
+  pivot_longer(
+    everything(),
+    names_to = "model_type", 
+    values_to = "rmse",
+    names_prefix = "rmse_"
+  ) %>%
+  group_by(model_type) %>%
+  summarize(m_rmse = mean(rmse))
+
+print(comparison_results)
+```
+
+In summary, the initial model, which uses the predictors selected through the stepwise model building process, appears to provide the best average cross-validated prediction performance among the three models. Model 2, with additional predictors and interactions, performs better than Model 1 but not as well as the initial model. This comparison underscores the importance of considering the trade-off between model complexity and predictive accuracy.
+
 
