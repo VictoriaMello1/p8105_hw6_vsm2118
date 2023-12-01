@@ -171,5 +171,28 @@ ggplot(aes(x = log_beta)) +
 
 logbeta_estimate_plot
 ```
+The R squared plot appears to follow a normal distribution with slight leftward skew that is likely a product of random sampling variability. However, the log beta plot is highly skewed to the left which may be the result of there being negative beta estimates that were not able to be used for calculating the log estimates. This strong leftward skew suggests that these log beta estimates may not be representative of the underlying data set. 
 
+
+95% Confidence Intervals: 
+
+```{r}
+# Calculate 95% confidence intervals for R squared and log beta
+ci_rsquared = quantile(results_bootstrap$r_squared, c(0.025, 0.975))
+ci_log_beta = quantile(results_bootstrap$log_beta, c(0.025, 0.975), na.rm = TRUE)
+
+# Display confidence interval results
+print(paste("95% CI for R-squared: [", round(ci_rsquared[1], 4), ",", round(ci_rsquared[2], 4), "]"))
+
+print(paste("95% CI for log(beta1 * beta2): [", round(ci_log_beta[1], 4), ",", round(ci_log_beta[2], 4), "]"))
+
+```
+
+
+
+### Problem 3
+
+```{r}
+
+```
 
